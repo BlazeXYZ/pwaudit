@@ -129,7 +129,7 @@ def main(argv: Optional[list[str]] = None,
             cache[prefix] = base_fetch(prefix)
         return cache[prefix]
 
-    color = sys.stdout.isatty() and not os.environ.get("NO_COLOR") and not args.json
+    color = (sys.stdout.isatty() or bool(os.environ.get("FORCE_COLOR"))) and not os.environ.get("NO_COLOR") and not args.json
     flagged = errored = False
     report, blocks = [], []
 

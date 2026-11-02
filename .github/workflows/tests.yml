@@ -1,0 +1,26 @@
+name: tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, python: "3.9" }
+          - { os: ubuntu-latest, python: "3.13" }
+          - { os: windows-latest, python: "3.13" }
+          - { os: macos-latest, python: "3.13" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Unit tests
+        run: python -m unittest -v
+      - name: CLI smoke test (offline; sample file contains weak passwords, so exit 1 is expected)
+        shell: bash
+        run: |
+          set +e
+          python -m pwaudit -f examples/sample_passwords.txt --offline
+          test $? -eq 1

@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pwaudit"
+version = "1.1.0"
+description = "Password strength auditor with privacy-preserving HIBP breach checks (k-anonymity)"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "BlazeXYZ" }]
+keywords = ["password", "security", "entropy", "haveibeenpwned", "k-anonymity", "cli"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+    "Topic :: Security",
+]
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/BlazeXYZ/pwaudit"
+
+[project.scripts]
+pwaudit = "pwaudit.cli:main"
+
+[tool.setuptools]
+packages = ["pwaudit"]
+
+[tool.setuptools.package-data]
+pwaudit = ["words.txt"]

@@ -1,9 +1,44 @@
+<div align="center">
+
 # pwaudit
 
+**Password auditing that prices predictable structure and checks breaches without sending the password anywhere.**
+
 [![tests](https://github.com/BlazeXYZ/pwaudit/actions/workflows/tests.yml/badge.svg)](https://github.com/BlazeXYZ/pwaudit/actions/workflows/tests.yml)
-![python](https://img.shields.io/badge/python-3.10%2B-blue)
-![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
-![license](https://img.shields.io/badge/license-MIT-green)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
+![dependencies: none](https://img.shields.io/badge/dependencies-none-brightgreen)
+![license: MIT](https://img.shields.io/badge/license-MIT-lightgrey)
+
+</div>
+
+---
+
+## Table of contents
+
+1. [The problem](#the-problem)
+2. [What pwaudit does](#what-pwaudit-does)
+3. [Quick start](#quick-start)
+4. [Demo: three passwords, three stories](#demo-three-passwords-three-stories)
+5. [Breach check specification](#breach-check-specification)
+6. [Strength model specification](#strength-model-specification)
+7. [Architecture](#architecture)
+8. [Output formats](#output-formats)
+9. [Key design decisions](#key-design-decisions)
+10. [Security of the tool itself](#security-of-the-tool-itself)
+11. [Testing and CI](#testing-and-ci)
+12. [Limitations and roadmap](#limitations-and-roadmap)
+13. [References](#references)
+14. [Legal and ethical use](#legal-and-ethical-use)
+
+---
+
+## The problem
+
+Two things decide whether a password survives an attack: how an attacker would guess it, and whether it has already been exposed.
+
+Most strength meters answer neither. They count characters and character classes, so `P@ssw0rd2024` looks strong even though it is `password` plus leetspeak plus a year, among the first things a cracker tries. And checking a password against a breach list normally means sending the password, or its full hash, to a third party, which defeats the purpose.
+
+## What pwaudit does
 
 A command-line password auditor that answers two questions:
 
@@ -12,25 +47,50 @@ A command-line password auditor that answers two questions:
 
 Pure Python standard library, zero dependencies, Python 3.10+, tested on Linux, Windows and macOS.
 
----
+## Quick start
 
-## Contents
+```bash
+git clone https://github.com/BlazeXYZ/pwaudit.git
+cd pwaudit
+python -m pwaudit            # prompts for a password, input hidden
+```
 
-- [Demo](#demo)
-- [Quick start](#quick-start)
-- [Usage and options](#usage-and-options)
-- [How the breach check works](#how-the-breach-check-works)
-- [How the strength model works](#how-the-strength-model-works)
-- [Design decisions and the alternatives I rejected](#design-decisions-and-the-alternatives-i-rejected)
-- [Threat model: what this protects and what it does not](#threat-model-what-this-protects-and-what-it-does-not)
-- [Testing strategy](#testing-strategy)
-- [Project structure](#project-structure)
-- [Limitations and future work](#limitations-and-future-work)
-- [References](#references)
+Nothing to install. To get a `pwaudit` command on your PATH instead:
 
----
+```bash
+pip install .
+pwaudit --help
+```
 
-## Demo
+Run the tests:
+
+```bash
+python -m unittest -v
+```
+
+### Usage and options
+
+```bash
+python -m pwaudit                                   # interactive, hidden prompt
+python -m pwaudit -f examples/sample_passwords.txt  # one password per line
+cat passwords.txt | python -m pwaudit -f -          # read from stdin
+python -m pwaudit -f passwords.txt --offline        # nothing leaves the machine
+python -m pwaudit -f passwords.txt --json           # machine-readable output
+python -m pwaudit --wordlist rockyou.txt            # bigger common-password list
+python -m pwaudit --dictionary eff_large_wordlist.txt  # bigger word list for passphrases
+```
+
+| Option | Purpose |
+| --- | --- |
+| `-f PATH`, `--file PATH` | Audit one password per line. `-` reads stdin. Without it, a hidden prompt is used. |
+| `--offline` | Skip the breach lookup. No network traffic at all. |
+| `--json` | Emit a JSON array instead of the text report. |
+| `--wordlist PATH` | Extra common passwords, merged with the built-in list. |
+| `--dictionary PATH` | Word list for passphrase scoring. Replaces the built-in list. |
+| `--timeout SECONDS` | Network timeout per request (default 10). |
+| `--version` | Print the version. |
+
+## Demo: three passwords, three stories
 
 ```text
 $ python -m pwaudit -f examples/sample_passwords.txt
@@ -71,66 +131,7 @@ Line 2 is `P@ssw0rd2024`. It uses all four character classes, so a naive checker
 
 Results are labelled by line number. The password itself is never printed, not even in part.
 
----
-
-## Quick start
-
-```bash
-git clone https://github.com/BlazeXYZ/pwaudit.git
-cd pwaudit
-python -m pwaudit            # prompts for a password, input hidden
-```
-
-Nothing to install. To get a `pwaudit` command on your PATH instead:
-
-```bash
-pip install .
-pwaudit --help
-```
-
-Run the tests:
-
-```bash
-python -m unittest -v
-```
-
----
-
-## Usage and options
-
-```bash
-python -m pwaudit                                   # interactive, hidden prompt
-python -m pwaudit -f examples/sample_passwords.txt  # one password per line
-cat passwords.txt | python -m pwaudit -f -          # read from stdin
-python -m pwaudit -f passwords.txt --offline        # nothing leaves the machine
-python -m pwaudit -f passwords.txt --json           # machine-readable output
-python -m pwaudit --wordlist rockyou.txt            # bigger common-password list
-python -m pwaudit --dictionary eff_large_wordlist.txt  # bigger word list for passphrases
-```
-
-| Option | Purpose |
-| --- | --- |
-| `-f PATH`, `--file PATH` | Audit one password per line. `-` reads stdin. Without it, a hidden prompt is used. |
-| `--offline` | Skip the breach lookup. No network traffic at all. |
-| `--json` | Emit a JSON array instead of the text report. |
-| `--wordlist PATH` | Extra common passwords, merged with the built-in list. |
-| `--dictionary PATH` | Word list for passphrase scoring. Replaces the built-in list. |
-| `--timeout SECONDS` | Network timeout per request (default 10). |
-| `--version` | Print the version. |
-
-**Exit codes** make it usable in scripts and CI:
-
-| Code | Meaning |
-| --- | --- |
-| `0` | Every password is at least Fair and was not found in any breach (or the check was skipped with `--offline`). |
-| `1` | At least one password is Weak or worse, or was found in a breach. |
-| `2` | Error: missing file, no input, cancelled, or the breach service was unreachable. |
-
-If a password is both flagged and the network fails for another, `1` wins, because "you have a weak password" is the more important message.
-
----
-
-## How the breach check works
+## Breach check specification
 
 Have I Been Pwned (HIBP) holds the SHA-1 hashes of about two billion passwords from real breaches. Sending a password, or even its full hash, to any third party would defeat the purpose of checking it. HIBP's range API solves this with **k-anonymity**:
 
@@ -160,9 +161,7 @@ sequenceDiagram
 
 SHA-1 is not being used here to protect anything. It is the format the HIBP dataset is published in, so the client must use it to compare. SHA-1's known weakness is **collisions** (two chosen inputs with the same hash, demonstrated by SHAttered in 2017). Collisions are irrelevant here. What matters is that the 20-bit prefix does not let anyone recover the password, and no collision attack changes that. The call passes `usedforsecurity=False` (Python 3.9+), which documents this intent and stops FIPS-mode systems from blocking the call.
 
----
-
-## How the strength model works
+## Strength model specification
 
 All logic is in [`strength.py`](pwaudit/strength.py), in `analyze()`. The output is in **bits**, meaning log₂ of the number of guesses an attacker needs. Every bit added doubles the work.
 
@@ -235,9 +234,60 @@ If the password is on the common-password list, or becomes one after lowercasing
 
 **Crack time** = 2^(bits − 1) ÷ 10¹¹ guesses per second. The −1 is the average case: an attacker finds the password after searching half the space on average. 10¹¹/s is roughly one current high-end GPU running hashcat against a fast unsalted hash such as MD5 or NTLM. The assumption is printed in every report, because crack time is meaningless without one. Against bcrypt or Argon2 the same password would take about a million times longer.
 
----
+## Architecture
 
-## Design decisions and the alternatives I rejected
+Three modules with one rule: only the CLI does I/O, and only `breach.py` touches the network.
+
+```text
+pwaudit/
+├── pwaudit/
+│   ├── __init__.py      version
+│   ├── __main__.py      enables `python -m pwaudit`
+│   ├── breach.py        HIBP k-anonymity client: hashing, request, response parsing
+│   ├── strength.py      entropy model, pattern detection, passphrase DP
+│   ├── words.txt        built-in word list (1,813 words) for passphrase scoring
+│   └── cli.py           argument parsing, input, output, exit codes
+├── tests/
+│   ├── test_breach.py   protocol, privacy and CLI tests (fake HIBP)
+│   └── test_strength.py strength model tests
+├── examples/
+│   └── sample_passwords.txt
+├── .github/workflows/tests.yml
+├── pyproject.toml
+└── LICENSE
+```
+
+Data flow for one password:
+
+```text
+cli.read_passwords ──► strength.analyze ──────────────────────────► StrengthResult
+                  └──► breach.pwned_count ─► sha1_parts ─► fetch(prefix) ─► count_in_range
+                                                              (cached per prefix)
+                                     both ─► cli.render_text / JSON ─► exit code
+```
+
+## Output formats
+
+| Flag | Output |
+|---|---|
+| *(default)* | Text report per password, labelled by line number: length, character set, raw and effective entropy, rating, crack time, breach count, findings |
+| `--json` | JSON array with the same fields and the same privacy guarantees |
+
+The password itself is never printed, not even in part.
+
+**Exit codes** make it usable in scripts and CI:
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Every password is at least Fair and was not found in any breach (or the check was skipped with `--offline`). |
+| `1` | At least one password is Weak or worse, or was found in a breach. |
+| `2` | Error: missing file, no input, cancelled, or the breach service was unreachable. |
+
+If a password is both flagged and the network fails for another, `1` wins, because "you have a weak password" is the more important message.
+
+## Key design decisions
+
+Each row gives the choice, the alternative rejected, and why.
 
 ### Privacy and security
 
@@ -279,9 +329,9 @@ If the password is on the common-password list, or becomes one after lowercasing
 | **Network failure reported, not fatal** | Crash, or silently report "not found" | Silently saying "not found" when the check never ran is the dangerous option. The report says `unavailable (...)` and the exit code is 2. |
 | **`unittest`** | `pytest` | It is in the standard library, so there is nothing to install to run the tests. |
 
----
+## Security of the tool itself
 
-## Threat model: what this protects and what it does not
+A password tool handles the most sensitive input there is, so the threat model is explicit.
 
 **Protects against**
 
@@ -296,9 +346,7 @@ If the password is on the common-password list, or becomes one after lowercasing
 - **Memory.** Python strings are immutable and cannot be reliably wiped from memory after use. A tool written in C or Rust could zero its buffers.
 - **Being a guarantee.** "Not found" means "not in HIBP's corpus", not "never leaked". The strength score is an estimate under one attacker model.
 
----
-
-## Testing strategy
+## Testing and CI
 
 `python -m unittest -v` runs 37 tests in under a second, with no network access. A fake HIBP that returns realistic padded responses replaces the network.
 
@@ -312,56 +360,19 @@ If the password is on the common-password list, or becomes one after lowercasing
 
 GitHub Actions runs the suite on Ubuntu (Python 3.10, the oldest supported version, and 3.14), Windows and macOS (3.14), plus an end-to-end CLI smoke test.
 
----
+## Limitations and roadmap
 
-## Project structure
-
-```text
-pwaudit/
-├── pwaudit/
-│   ├── __init__.py      version
-│   ├── __main__.py      enables `python -m pwaudit`
-│   ├── breach.py        HIBP k-anonymity client: hashing, request, response parsing
-│   ├── strength.py      entropy model, pattern detection, passphrase DP
-│   ├── words.txt        built-in word list (1,813 words) for passphrase scoring
-│   └── cli.py           argument parsing, input, output, exit codes
-├── tests/
-│   ├── test_breach.py   protocol, privacy and CLI tests (fake HIBP)
-│   └── test_strength.py strength model tests
-├── examples/
-│   └── sample_passwords.txt
-├── .github/workflows/tests.yml
-├── pyproject.toml
-└── LICENSE
-```
-
-Data flow for one password:
-
-```text
-cli.read_passwords ──► strength.analyze ──────────────────────────► StrengthResult
-                  └──► breach.pwned_count ─► sha1_parts ─► fetch(prefix) ─► count_in_range
-                                                              (cached per prefix)
-                                     both ─► cli.render_text / JSON ─► exit code
-```
-
----
-
-## Limitations and future work
+**Known limitations**, written down on purpose:
 
 - **Word frequency.** Every word in the list costs the same. Weighting by rank (`the` cheaper than `lantern`), as zxcvbn does, would be more accurate.
 - **Word list coverage.** A word missing from the list is priced letter by letter, so the score is too high. `--dictionary` with a larger list (such as EFF's 7,776-word diceware list) helps.
 - **English only.** Words, keyboard rows (QWERTY) and leetspeak are all English-centric.
 - **Names, dates and personal information.** `jordan1995` is caught (common list + year), but `dd/mm/yyyy` dates and names in general are not.
+
+**Roadmap:**
+
 - **Stronger privacy protocol.** Frequency-smoothing bucketisation or private set intersection (as in Google's Password Checkup) would leak less than a hash prefix, but HIBP does not offer them.
 - **NTLM mode.** HIBP also serves NTLM hashes. That would allow auditing hashes exported from Active Directory without ever handling the plaintext.
-
----
-
-## Ethics and scope
-
-Audit your own passwords, or passwords you are authorised to assess. This tool does no guessing or cracking. It only estimates and looks things up.
-
----
 
 ## References
 
@@ -374,6 +385,14 @@ Audit your own passwords, or passwords you are authorised to assess. This tool d
 - M. Stevens et al., *The first collision for full SHA-1* (SHAttered), CRYPTO 2017.
 - PEP 476, *Enabling certificate verification by default for stdlib http clients*.
 
-## License
+## Legal and ethical use
 
-[MIT](LICENSE)
+Audit your own passwords, or passwords you are authorised to assess. This tool does no guessing or cracking. It only estimates and looks things up.
+
+---
+
+<div align="center">
+
+MIT License · Built by <b>BlazeXYZ</b>
+
+</div>

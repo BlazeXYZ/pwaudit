@@ -393,6 +393,6 @@ Audit your own passwords, or passwords you are authorised to assess. This tool d
 
 <div align="center">
 
-MIT License · Built by <b>BlazeXYZ</b>
+MIT License · Built by <b>BlazeXYZ</b> · Part of <a href="https://blazexyz.com">blazexyz.com</a>
 
 </div>

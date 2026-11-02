@@ -92,6 +92,9 @@ python -m pwaudit --dictionary eff_large_wordlist.txt  # bigger word list for pa
 
 ## Demo: three passwords, three stories
 
+<p align="center"><img src="docs/demo.svg" alt="Animated terminal: pwaudit rates P@ssw0rd2024 very weak and finds it in breaches 21,349 times, then rates a four-word passphrase strong and not breached" width="820"></p>
+<p align="center"><sub>Recorded with <a href="https://github.com/BlazeXYZ/termreel">termreel</a> from <a href="docs/demo.reel"><code>docs/demo.reel</code></a>.</sub></p>
+
 ```text
 $ python -m pwaudit -f examples/sample_passwords.txt
 

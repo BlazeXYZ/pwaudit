@@ -1,0 +1,12 @@
+# README demo. Render from the repo root:
+#   termreel render docs/demo.reel -o docs/demo.svg
+@cwd ..
+@size 108x24
+@title pwaudit
+@prompt [bold #db94ed]~/pwaudit[/] [#ee15ee]❯[/]
+@typing 22
+$ echo P@ssw0rd2024| python -m pwaudit -f -
+@sleep 2.5
+@clear
+$ echo Blue-Falcon-Lantern-Orbit-42| python -m pwaudit -f -
+@sleep 3

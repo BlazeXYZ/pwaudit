@@ -1,7 +1,7 @@
 # pwaudit
 
 [![tests](https://github.com/BlazeXYZ/pwaudit/actions/workflows/tests.yml/badge.svg)](https://github.com/BlazeXYZ/pwaudit/actions/workflows/tests.yml)
-![python](https://img.shields.io/badge/python-3.9%2B-blue)
+![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,7 +10,7 @@ A command-line password auditor that answers two questions:
 1. **How hard is this password to guess?** An entropy model that prices predictable structure (common passwords, keyboard walks, sequences, years, dictionary words) at what an attacker would actually spend on it, not at what the character count suggests.
 2. **Has it already leaked?** A breach lookup against [Have I Been Pwned](https://haveibeenpwned.com/Passwords) using **k-anonymity**: the password is hashed locally and only the first 5 characters of the hash ever leave the machine.
 
-Pure Python standard library, zero dependencies, Python 3.9+, tested on Linux, Windows and macOS.
+Pure Python standard library, zero dependencies, Python 3.10+, tested on Linux, Windows and macOS.
 
 ---
 
@@ -310,7 +310,7 @@ If the password is on the common-password list, or becomes one after lowercasing
 | Robustness | Network failure becomes a report and exit 2. Missing file. Same prefix fetched once. A UTF-8 BOM is not hashed into the password. |
 | Strength model | Pool sizes, sequences, keyboard walks, repeats, years, leetspeak, common-password variants, word splitting with and without separators, capitalisation and leet costs, custom dictionaries, and the invariant effective ≤ raw. |
 
-GitHub Actions runs the suite on Ubuntu (Python 3.9 and 3.13), Windows and macOS, plus an end-to-end CLI smoke test.
+GitHub Actions runs the suite on Ubuntu (Python 3.10, the oldest supported version, and 3.14), Windows and macOS (3.14), plus an end-to-end CLI smoke test.
 
 ---
 

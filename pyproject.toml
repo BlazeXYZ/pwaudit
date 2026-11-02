@@ -7,7 +7,7 @@ name = "pwaudit"
 version = "1.1.0"
 description = "Password strength auditor with privacy-preserving HIBP breach checks (k-anonymity)"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "BlazeXYZ" }]
 keywords = ["password", "security", "entropy", "haveibeenpwned", "k-anonymity", "cli"]
